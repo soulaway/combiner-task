@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 import com.tech.task.Combiner.CombinerException;
 /**
  * Stateful @BlockingQueue wrapper object.
- * Holds a counter, that defines how much polls from this queue the @Combiner will require.
+ * Holds a counter, that defines how much polls from this queue the @Combiner will require for the certain polling population.
  * 
  * @author soul
  *

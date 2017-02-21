@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 /**
  * Runnable combiner processor, that feeds @SynchronousQueue with values from multiple @BlockingQueue
- * During each poll and put calculates most priority @BlockingQueue by sorting the resource list by the value of the priority counter
+ * During each put calculates most priority @BlockingQueue by sorting the resource list by the value of the priority counter
  * 
  * @author soul
  *
