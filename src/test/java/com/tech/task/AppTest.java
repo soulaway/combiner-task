@@ -66,12 +66,12 @@ public class AppTest {
 
 	/**
 	 * Initializing the @Combiner object with 2 producers queues. qA and qB has
-	 * same priority 95; But different capacity, qA has 50 items loaded, qB has
+	 * same priority 95; But different capacity, qA has 30 items loaded, qB has
 	 * 100; Consumer thread takes first 100 values from the consumerQ. While
 	 * Consuming first 50 values behavior of combining becomes changed: qB will
-	 * be deleted from producers and new qC will be added instead. Method asserts
-	 * that qA becomes deleted for idling, qB successfully deleted manually, qC
-	 * successfully added
+	 * be deleted from producers and new qC will be added instead. Method
+	 * asserts that qA becomes deleted for idling, qB successfully deleted
+	 * manually, qC successfully added
 	 * 
 	 * @throws InterruptedException
 	 * @throws CombinerException
@@ -99,19 +99,20 @@ public class AppTest {
 							if (combiner.hasInputQueue(produserB)) {
 								combiner.removeInputQueue(produserB);
 							}
-							combiner.addInputQueue(produserC, PROPDUSER_A_PRIORITY, EMPTY_TIMEOUT, TimeUnit.MILLISECONDS);
+							combiner.addInputQueue(produserC, PROPDUSER_A_PRIORITY, EMPTY_TIMEOUT,
+									TimeUnit.MILLISECONDS);
 
 						}
 						String key = consumerQ.take();
 						map.put(key, (map.containsKey(key)) ? map.get(key) + 1 : 1);
 
 					}
-					//queue were deleted for idling after reading all 30 values
+					// queue were deleted for idling after reading all 30 values
 					Assert.assertTrue(map.get("A") == 30);
 					Assert.assertTrue(!combiner.hasInputQueue(produserA));
-					//queue were successfully added
+					// queue were successfully added
 					Assert.assertTrue(combiner.hasInputQueue(produserC));
-					//qB has less values taken than qC
+					// qB has less values taken than qC
 					Assert.assertTrue(map.get("B") < map.get("C"));
 				} catch (InterruptedException | CombinerException e) {
 					e.printStackTrace();
