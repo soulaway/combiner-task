@@ -6,19 +6,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.tech.task.Combiner.CombinerException;
-
+/**
+ * Stateful @BlockingQueue wrapper object.
+ * Holds a counter, that defines how much polls from this queue the @Combiner will require.
+ * 
+ * @author soul
+ *
+ * @param <T> @Combiner parameter
+ */
 public class QueuePriorityWrapper<T> {
 	
 	public final static Logger LOGGER = Logger.getLogger(QueuePriorityWrapper.class.getName());
 	
 	private final BlockingQueue<T> queue;
 	private final double priority;
-	private double counter;
 	private final long isEmptyTimeout; 
-	
 	private final TimeUnit timeUnit;
 	private final CombinerImpl<T> combiner;
-
+	
+	private double counter;
+	
 	public QueuePriorityWrapper(BlockingQueue<T> queue, double priority, long isEmptyTimeout, TimeUnit timeUnit, CombinerImpl<T> combiner){
 		this.queue = queue;
 		this.priority = priority;
@@ -28,18 +35,34 @@ public class QueuePriorityWrapper<T> {
 		this.combiner = combiner;
 	}
 	
+	/**
+	 * Performs a poll of the wrapped queue, decreasing counter.
+	 * If the polling population becomes complete will requests to resets all other counters back to the value of their priority.
+	 * 
+	 * @return polled value or @null if the queue was idle enough
+	 * @throws InterruptedException
+	 * @throws CombinerException
+	 */
+	
 	public T pollQueue() throws InterruptedException, CombinerException{
 		T ret = queue.poll(isEmptyTimeout, timeUnit);
 		if (ret == null){
 			LOGGER.log(Level.INFO, "queue with priority {0} is being removed because idle", priority);
-			getCombiner().removeInputQueue(queue);
+			combiner.removeInputQueue(queue);
 		}
 		if (counter == 0){
-			getCombiner().resetCounter();
+			combiner.resetCounters();
 		} else {
 			counter--;
 		}
 		return ret;
+	}
+	
+	/**
+	 * Callback method from the @CombinerImpl
+	 */
+	protected void resetCounter(){
+		counter = priority;
 	}
 	
 	public BlockingQueue<T> getQueue() {
@@ -57,11 +80,10 @@ public class QueuePriorityWrapper<T> {
 	public TimeUnit getTimeUnit() {
 		return timeUnit;
 	}
-
-	public CombinerImpl<T> getCombiner() {
-		return combiner;
-	}
-
+	
+	/**
+	 * Initially equal to the priority, down counts each poll of the queue,
+	 */
 	public double getCounter() {
 		return counter;
 	}

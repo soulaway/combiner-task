@@ -6,8 +6,16 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+/**
+ * Runnable combiner processor, that feeds @SynchronousQueue with values from multiple @BlockingQueue
+ * During each poll and put calculates most priority @BlockingQueue by sorting the resource list by the value of the priority counter
+ * 
+ * @author soul
+ *
+ * @param <T> @Combiner parameter
+ */
 
 public class CombinerImpl<T> extends Combiner<T> implements Runnable{
 	
@@ -17,7 +25,6 @@ public class CombinerImpl<T> extends Combiner<T> implements Runnable{
 
 	protected CombinerImpl(SynchronousQueue<T> outputQueue) {
 		super(outputQueue);
-
 	}
 
 	@Override
@@ -28,22 +35,19 @@ public class CombinerImpl<T> extends Combiner<T> implements Runnable{
 
 	@Override
 	public void removeInputQueue(BlockingQueue<T> queue) throws CombinerException {
-		Optional<QueuePriorityWrapper<T>> ow = producers.stream().filter((w) -> w.getQueue().equals(queue)).findFirst();
-		if (ow.isPresent()){
-			producers.remove(ow.get());
-		} else {
-			LOGGER.log(Level.WARNING, "unable to remove queue %s - queue is absent", queue.toString());
-		}
+		producers.remove(getWrapper(queue).get());
 	}
 
 	@Override
 	public boolean hasInputQueue(BlockingQueue<T> queue) {
-		Optional<QueuePriorityWrapper<T>> ow = producers.stream().filter((w) -> w.getQueue().equals(queue)).findFirst();
-		return ow.isPresent();
+		return getWrapper(queue).isPresent();
 	}
 	
-	public void resetCounter(){
-		producers.stream().forEach(w -> w.setCounter(w.getPriority()));
+	/**
+	 * Each @QueuePriorityWrapper after feeding enough for its priority, requests all other participants to set their counters back to their initial state
+	 */
+	protected void resetCounters(){
+		producers.stream().forEach(w -> w.resetCounter());
 	}
 	
 	@Override
@@ -51,13 +55,17 @@ public class CombinerImpl<T> extends Combiner<T> implements Runnable{
 		while (producers.size() > 0){
 			producers.sort((p1, p2) -> ((p2.getCounter() > p1.getCounter()) ? 1 : -1));
 			try {
-				T t = producers.get(0).pollQueue();
+				T t = producers.stream().findFirst().get().pollQueue();
 				if (t != null){
 					outputQueue.put(t);
-				} // Otherwise queue were already removed
+				} // Otherwise queue were just already removed
 			} catch (InterruptedException | com.tech.task.Combiner.CombinerException e) {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	private Optional<QueuePriorityWrapper<T>> getWrapper(BlockingQueue<T> queue){
+		return producers.stream().filter((w) -> w.getQueue().equals(queue)).findFirst();
 	}
 }
