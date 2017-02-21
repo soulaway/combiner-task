@@ -55,7 +55,7 @@ public class QueuePriorityWrapper<T> {
 			LOGGER.log(Level.INFO, "queue with priority {0} is being removed because idle", priority);
 			combiner.removeInputQueue(queue);
 		}
-		if (counter == 0) {
+		if (counter <= 0) {
 			combiner.resetCounters();
 		} else {
 			counter--;
