@@ -1,9 +1,9 @@
 package com.tech.task;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -24,7 +24,7 @@ public class CombinerImpl<T> extends Combiner<T> implements Runnable {
 
 	public final static Logger LOGGER = Logger.getLogger(CombinerImpl.class.getName());
 
-	List<QueuePriorityWrapper<T>> producers = new ArrayList<QueuePriorityWrapper<T>>();
+	List<QueuePriorityWrapper<T>> producers = new  CopyOnWriteArrayList<QueuePriorityWrapper<T>>();
 
 	protected CombinerImpl(SynchronousQueue<T> outputQueue) {
 		super(outputQueue);
